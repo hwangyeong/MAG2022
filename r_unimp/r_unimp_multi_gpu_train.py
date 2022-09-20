@@ -39,21 +39,21 @@ import time
 
     
 def train_step(model, loss_fn, batch, dataset):
-    graph_list, x, m2v_x, y, label_y, label_idx, = batch
+    graph_list, x, y, label_y, label_idx, = batch
 
     rd_y = np.random.randint(0, 153, size=label_y.shape)
     rd_m = np.random.rand(label_y.shape[0]) < 0.15
     label_y[rd_m] = rd_y[rd_m]
 
     x = paddle.to_tensor(x, dtype='float32')
-    m2v_x = paddle.to_tensor(m2v_x, dtype='float32')
+    # m2v_x = paddle.to_tensor(m2v_x, dtype='float32')
     y = paddle.to_tensor(y, dtype='int64')
     label_y = paddle.to_tensor(label_y, dtype='int64')
     label_idx = paddle.to_tensor(label_idx, dtype='int64')
     
     graph_list = [(item[0].tensor(), paddle.to_tensor(item[2])) for item in graph_list]
     
-    out = model(graph_list, x, m2v_x, label_y, label_idx)
+    out = model(graph_list, x, label_y, label_idx)
     
     return loss_fn(out, y)
 
@@ -153,15 +153,17 @@ def evaluate(eval_ds, model, loss_fn, config, evaluator, dataset):
     
     for batch in eval_ds.generator():
         
-        graph_list, x, m2v_x, y, label_y, label_idx, = batch
+        # graph_list, x, m2v_x, y, label_y, label_idx, = batch
+        graph_list, x, y, label_y, label_idx, = batch
         x = paddle.to_tensor(x, dtype='float32')
-        m2v_x = paddle.to_tensor(m2v_x, dtype='float32')
+        # m2v_x = paddle.to_tensor(m2v_x, dtype='float32')
         y = paddle.to_tensor(y, dtype='int64')
         label_y = paddle.to_tensor(label_y, dtype='int64')
         label_idx = paddle.to_tensor(label_idx, dtype='int64')
         
         graph_list = [(item[0].tensor(), paddle.to_tensor(item[2])) for item in graph_list]
-        out = model(graph_list, x, m2v_x, label_y, label_idx)
+        # out = model(graph_list, x, m2v_x, label_y, label_idx)
+        out = model(graph_list, x, label_y, label_idx)
         loss = loss_fn(out, y)
         
         pred_temp.append(out.numpy())

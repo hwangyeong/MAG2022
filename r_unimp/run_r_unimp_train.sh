@@ -1,5 +1,5 @@
 ## train_cv0
-CUDA_VISIBLE_DEVICES=0,2,6,7 python -m paddle.distributed.launch --log_dir ./output/model_64_valid_0/ r_unimp/r_unimp_multi_gpu_train.py --conf r_unimp/configs/r_unimp_m2v_64_0.yaml
+CUDA_VISIBLE_DEVICES=3,4,5 python -m paddle.distributed.launch --log_dir ./output/model_64_valid_0/ r_unimp/r_unimp_multi_gpu_train.py --conf r_unimp/configs/r_unimp_m2v_64_0.yaml
 
 # ## train_cv1
 # CUDA_VISIBLE_DEVICES=0,2,6,7 python -m paddle.distributed.launch --log_dir ./output/model_64_valid_1/ r_unimp/r_unimp_multi_gpu_train.py --conf r_unimp/configs/r_unimp_m2v_64_1.yaml

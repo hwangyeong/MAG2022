@@ -30,7 +30,7 @@ model:
 
 # trainer
 output_path: "./output/model_64_valid_0"
-epochs: 100
+epochs: 2
 eval_step: 0
 eval_per_steps: 1
 eval_max_steps: 50000

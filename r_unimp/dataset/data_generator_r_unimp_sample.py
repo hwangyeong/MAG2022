@@ -292,8 +292,8 @@ class MAG240M(object):
         self.x = np.memmap(f'{dataset.dir}/full_feat.npy', dtype=np.float16,
                            mode='r', shape=(N, self.num_features))
         
-        self.id_x = np.memmap(f'{dataset.dir}/{self.m2v_file}', dtype=np.float16,
-                          mode='r', shape=(N, self.m2v_dim))
+        # self.id_x = np.memmap(f'{dataset.dir}/{self.m2v_file}', dtype=np.float16,
+        #                   mode='r', shape=(N, self.m2v_dim))
        
         self.y = dataset.all_paper_label
 
@@ -463,10 +463,11 @@ class DataGenerator(BaseDataGenerator):
     def post_fn(self, batch):
         graph_list, neigh_nodes, y, sub_label_y, sub_label_index, pos = batch
         x = self.dataset.x[neigh_nodes]
-        id_x = self.dataset.id_x[neigh_nodes]
+        # id_x = self.dataset.id_x[neigh_nodes]
         pos = self.dataset.pos[pos]
         x = x + pos
-        return graph_list, x, id_x, y, sub_label_y, sub_label_index
+        # return graph_list, x, id_x, y, sub_label_y, sub_label_index
+        return graph_list, x, y, sub_label_y, sub_label_index
 
 if __name__ == "__main__":
     root = 'dataset_path'

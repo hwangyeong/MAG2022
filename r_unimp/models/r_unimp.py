@@ -138,9 +138,10 @@ class GNNModel(nn.Layer):
         else:
             return None
 
-    def forward(self, graph_list, feature, m2v_feature, label_y, label_idx):
-        m2v_fc = self.input_drop(self.m2v_fc(m2v_feature))
-        feature = feature + m2v_fc 
+    # def forward(self, graph_list, feature, m2v_feature, label_y, label_idx):
+    def forward(self, graph_list, feature, label_y, label_idx):
+        # m2v_fc = self.input_drop(self.m2v_fc(m2v_feature))
+        # feature = feature + m2v_fc 
 
         label_embed = self.label_embed(label_y)
         label_embed = self.input_drop(label_embed)

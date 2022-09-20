@@ -5,14 +5,86 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "bashdb",
+            "request": "launch",
+            "name": "Bash-Debug (hardcoded script name)",
+            "cwd": "${workspaceFolder}",
+            // "program": "${workspaceFolder}/mag_jax/organize_data.sh",
+            // "args": ["-i","dataset_path","-o","dataset_path/jax_process"]
+            // "program": "${workspaceFolder}/mag_jax/run_preprocessing.sh",
+            // "program": "${workspaceFolder}/mag_jax/run_training.sh",
+            "program": "${workspaceFolder}/mag_jax/run_training.sh",
+            "args": ["-r", "dataset_path/jax_process"]
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false,
+            // "args": [
+            //     // "--log-dir", "./output/model_64_valid_0/",
+            //     "--conf", "r_unimp/configs/r_unimp_m2v_64_0.yaml"
+            // ],
+            // "args": [
+            //     "--data_root", "dataset_path/jax_process/data"
+            // ]
+            "args": [
+                "--jaxline_mode", "train",
+                "--config", "mag_jax/config.py",
+                "--config.random_seed", "100",
+                "--config.checkpoint_dir", "dataset_path/jax_process/data/checkpoints/k0_seed100",
+                "--config.experiment_kwargs.config.dataset_kwargs.data_root", "dataset_path/jax_process/data",
+                "--config.experiment_kwargs.config.dataset_kwargs.k_fold_split_id", "0",
+                "--config.experiment_kwargs.config.num_eval_iterations_to_ensemble", "5",
+                "--config.experiment_kwargs.config.eval.split", "valid"
+            ],
+            
+            //  "args": [
+            //     "--jaxline_mode", "eval",
+            //     "--config", "mag_jax/config.py",
+            //     "--config.one_off_evaluate", "True",
+            //     "--config.checkpoint_dir", "dataset_path/jax_process/data/checkpoints/k9_seed109",
+            //     "--config.restore_path", "dataset_path/jax_process/models/k9_seed109",
+            //     "--config.experiment_kwargs.config.dataset_kwargs.data_root", "dataset_path/jax_process/data",
+            //     "--config.experiment_kwargs.config.dataset_kwargs.k_fold_split_id", "0",
+            //     "--config.experiment_kwargs.config.num_eval_iterations_to_ensemble", "5",
+            //     "--config.experiment_kwargs.config.predictions_dir", "dataset_path/jax_process/predictions/9",
+            //     "--config.experiment_kwargs.config.eval.split", "valid"
+            // ],
+            
             "env": {
-                "CUDA_VISIBLE_DEVICES": "7"
+                "CUDA_VISIBLE_DEVICES": "1"
+            },
+        },
+        {
+            "name": "Python: no args",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            // "args": [
+            //     // "--log-dir", "./output/model_64_valid_0/",
+            //     "--conf", "r_unimp/configs/r_unimp_m2v_64_0.yaml"
+            // ],
+            // "args": [
+            //     "--data_root", "dataset_path/jax_process/data"
+            // ]
+            // "args": [
+            //     "--jaxline_mode", "eval",
+            //     "--config", "mag_jax/config.py",
+            //     "--config.random_seed", "100",
+            //     "--config.checkpoint_dir", "dataset_path/jax_process/data/checkpoints/k0_seed100",
+            //     "--config.experiment_kwargs.config.dataset_kwargs.data_root", "dataset_path/jax_process/data",
+            //     "--config.experiment_kwargs.config.dataset_kwargs.k_fold_split_id", "0",
+            //     "--config.experiment_kwargs.config.num_eval_iterations_to_ensemble", "5",
+            //     "--config.experiment_kwargs.config.eval.split", "valid"
+            // ],
+            
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
             },
         }
     ]
