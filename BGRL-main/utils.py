@@ -51,9 +51,9 @@ class Augmentation:
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", "-r", type=str, default="data",
+    parser.add_argument("--root", "-r", type=str, default="dataset_path",
                         help="Path to data directory, where all the datasets will be placed. Default is 'data'")
-    parser.add_argument("--name", "-n",type=str, default="WikiCS",
+    parser.add_argument("--name", "-n",type=str, default="cora", #WikiCS
                         help="Name of the dataset. Supported names are: cora, citeseer, pubmed, photo, computers, cs, and physics")
     parser.add_argument("--layers", "-l", nargs="+", default=[
                         512, 256], help="The number of units of each layer of the GNN. Default is [512, 128]")

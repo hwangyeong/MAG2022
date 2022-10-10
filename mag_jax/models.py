@@ -158,8 +158,8 @@ class NodePropertyEncodeProcessDecode(hk.Module):
     self._output_sizes = list(mlp_hidden_sizes) + [latent_size]
     self._num_message_passing_steps = num_message_passing_steps
     self._activation = _get_activation_fn(activation)
-    self._dropout_rate = dropout_rate
-    self._dropedge_rate = dropedge_rate
+    self._dropout_rate = dropout_rate # 0.3
+    self._dropedge_rate = dropedge_rate # 0.25
     self._use_sent_edges = use_sent_edges
     self._disable_edge_updates = disable_edge_updates
     self._normalization_type = normalization_type

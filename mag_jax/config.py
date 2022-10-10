@@ -34,14 +34,18 @@ def get_config(debug: bool = False) -> config_dict.ConfigDict:
               dataset_kwargs=dict(
                   data_root='/data/',
                   online_subsampling_kwargs=dict(
+                    #   max_nb_neighbours_per_type=[
+                    #       [[40, 20, 0, 40], [0, 0, 0, 0], [0, 0, 0, 0]],
+                    #       [[40, 20, 0, 40], [40, 0, 10, 0], [0, 0, 0, 0]],
+                    #   ],
                       max_nb_neighbours_per_type=[
-                          [[40, 20, 0, 40], [0, 0, 0, 0], [0, 0, 0, 0]],
-                          [[40, 20, 0, 40], [40, 0, 10, 0], [0, 0, 0, 0]],
+                          [[20, 10, 0, 20], [0, 0, 0, 0], [0, 0, 0, 0]],
+                          [[20, 10, 0, 20], [20, 0, 5, 0], [0, 0, 0, 0]],
                       ],
                       remove_future_nodes=True,
                       deduplicate_nodes=True,
                   ),
-                  ratio_unlabeled_data_to_labeled_data=10.0,
+                  ratio_unlabeled_data_to_labeled_data=2.0,
                   k_fold_split_id=config_dict.placeholder(int),
                   use_all_labels_when_not_training=False,
                   use_dummy_adjacencies=debug,
@@ -106,7 +110,7 @@ def get_config(debug: bool = False) -> config_dict.ConfigDict:
 
   ## Training loop config.
 #   config.training_steps = 500000
-  config.training_steps = 10
+  config.training_steps = 500
   config.checkpoint_dir = '/tmp/checkpoint/mag/'
   config.train_checkpoint_all_hosts = False
   config.log_train_data_interval = 10

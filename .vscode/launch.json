@@ -15,9 +15,10 @@
             // "program": "${workspaceFolder}/mag_jax/run_training.sh",
             "program": "${workspaceFolder}/mag_jax/run_training.sh",
             "args": ["-r", "dataset_path/jax_process"]
+            // "args": ["-r", "dataset_path/mag_sub/sub_1e-4/jax_process"]
         },
         {
-            "name": "Python: Current File",
+            "name": "Python: jax",
             "type": "python",
             "request": "launch",
             "program": "${file}",
@@ -34,8 +35,8 @@
                 "--jaxline_mode", "train",
                 "--config", "mag_jax/config.py",
                 "--config.random_seed", "100",
-                "--config.checkpoint_dir", "dataset_path/jax_process/data/checkpoints/k0_seed100",
-                "--config.experiment_kwargs.config.dataset_kwargs.data_root", "dataset_path/jax_process/data",
+                "--config.checkpoint_dir", "dataset_path/mag_sub/sub_1e-4/jax_process/data/checkpoints/k0_seed100",
+                "--config.experiment_kwargs.config.dataset_kwargs.data_root", "dataset_path/mag_sub/sub_1e-4/jax_process/data",
                 "--config.experiment_kwargs.config.dataset_kwargs.k_fold_split_id", "0",
                 "--config.experiment_kwargs.config.num_eval_iterations_to_ensemble", "5",
                 "--config.experiment_kwargs.config.eval.split", "valid"
@@ -55,7 +56,24 @@
             // ],
             
             "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
+                "CUDA_VISIBLE_DEVICES": "2"
+            },
+        },
+        {
+            "name": "Python: pyg",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--device", "0,", 
+                "--model", "rgraphsage",
+                "--in-memory"
+            ],
+            
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
             },
         },
         {

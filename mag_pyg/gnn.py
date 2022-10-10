@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from torch.nn import ModuleList, Sequential, Linear, BatchNorm1d, ReLU, Dropout
 from torch.optim.lr_scheduler import StepLR
 
-from pytorch_lightning.metrics import Accuracy
+from torchmetrics import Accuracy
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import (LightningDataModule, LightningModule, Trainer,
                                seed_everything)
@@ -81,7 +81,8 @@ class MAG240M(LightningDataModule):
         self.train_idx.share_memory_()
         self.val_idx = torch.from_numpy(dataset.get_idx_split('valid'))
         self.val_idx.share_memory_()
-        self.test_idx = torch.from_numpy(dataset.get_idx_split('test-dev'))
+        # self.test_idx = torch.from_numpy(dataset.get_idx_split('test-dev'))
+        self.test_idx = torch.from_numpy(dataset.get_idx_split('test'))
         self.test_idx.share_memory_()
 
         if self.in_memory:
@@ -215,11 +216,11 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--model', type=str, default='gat',
+    parser.add_argument('--model', type=str, default='graphsage',
                         choices=['gat', 'graphsage'])
     parser.add_argument('--sizes', type=str, default='25-15')
     parser.add_argument('--in-memory', action='store_true')
-    parser.add_argument('--device', type=str, default='0')
+    parser.add_argument('--device', type=str, default='1')
     parser.add_argument('--evaluate', action='store_true')
     args = parser.parse_args()
     args.sizes = [int(i) for i in args.sizes.split('-')]

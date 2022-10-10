@@ -65,10 +65,17 @@ class Dataset(InMemoryDataset):
     def raw_file_names(self):
         return ["data.pt"]
 
+    # @property
+    # def processed_file_names(self):
+    #     if self.num_parts == 1:
+    #         return [f'byg.data.aug.pt']
+    #     else:
+    #         return [f'byg.data.aug.ip.{self.num_parts}.fp.{self.final_parts}.pt']
+
     @property
     def processed_file_names(self):
         if self.num_parts == 1:
-            return [f'byg.data.aug.pt']
+            return [f'data.pt']
         else:
             return [f'byg.data.aug.ip.{self.num_parts}.fp.{self.final_parts}.pt']
 

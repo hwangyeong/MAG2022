@@ -25,8 +25,8 @@ class ModelTrainer:
         self._device = f'cuda:{args.device}' if torch.cuda.is_available() else "cpu"
         self._dataset = data.Dataset(root=args.root, name=args.name)[0]
         print(f"Data: {self._dataset}")
-        hidden_layers = [int(l) for l in args.layers]
-        layers = [self._dataset.x.shape[1]] + hidden_layers
+        hidden_layers = [int(l) for l in args.layers] #[512, 256]
+        layers = [self._dataset.x.shape[1]] + hidden_layers #cora [1433, 512, 256]
         self._model = models.BGRL(layer_config=layers, pred_hid=args.pred_hid, dropout=args.dropout, epochs=args.epochs).to(self._device)
         print(self._model)
 
@@ -123,14 +123,19 @@ class ModelTrainer:
     
         dev_accs, test_accs = [], []
         
-        for i in range(20):
+        for i in range(1):
 
-            self._train_mask = self._dataset.train_mask[i]
-            self._dev_mask = self._dataset.val_mask[i]
-            if self._args.name == "WikiCS":
+            if self._args.name == "cora":
+                self._train_mask = self._dataset.train_mask
+                self._dev_mask = self._dataset.val_mask
                 self._test_mask = self._dataset.test_mask
-            else :
-                self._test_mask = self._dataset.test_mask[i]
+            else:
+                self._train_mask = self._dataset.train_mask[i]
+                self._dev_mask = self._dataset.val_mask[i]
+                if self._args.name == "WikiCS":
+                    self._test_mask = self._dataset.test_mask
+                else :
+                    self._test_mask = self._dataset.test_mask[i]
 
             classifier = models.LogisticRegression(emb_dim, num_class).to(self._device)
             optimizer = torch.optim.Adam(classifier.parameters(), lr=0.01, weight_decay=0.0)

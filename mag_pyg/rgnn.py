@@ -12,7 +12,7 @@ from ogb.lsc import MAG240MDataset, MAG240MEvaluator
 from pytorch_lightning import (LightningDataModule, LightningModule, Trainer,
                                seed_everything)
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.metrics import Accuracy
+from torchmetrics import Accuracy
 from torch import Tensor
 from torch.nn import BatchNorm1d, Dropout, Linear, ModuleList, ReLU, Sequential
 from torch.optim.lr_scheduler import StepLR
@@ -71,7 +71,8 @@ class MAG240M(LightningDataModule):
 
     @property
     def num_classes(self) -> int:
-        return 153
+        # return 153
+        return 150
 
     @property
     def num_relations(self) -> int:
@@ -128,7 +129,7 @@ class MAG240M(LightningDataModule):
             N = (dataset.num_papers + dataset.num_authors +
                  dataset.num_institutions)
 
-            perm = (N * row).add_(col).numpy().argsort()
+            perm = (N * row).add_(col).numpy().argsort() #编号从小到大排序
             perm = torch.from_numpy(perm)
             row = row[perm]
             col = col[perm]
@@ -226,7 +227,8 @@ class MAG240M(LightningDataModule):
         self.train_idx.share_memory_()
         self.val_idx = torch.from_numpy(dataset.get_idx_split('valid'))
         self.val_idx.share_memory_()
-        self.test_idx = torch.from_numpy(dataset.get_idx_split('test-dev'))
+        # self.test_idx = torch.from_numpy(dataset.get_idx_split('test-dev'))
+        self.test_idx = torch.from_numpy(dataset.get_idx_split('test'))
         self.test_idx.share_memory_()
 
         N = dataset.num_papers + dataset.num_authors + dataset.num_institutions
@@ -252,25 +254,25 @@ class MAG240M(LightningDataModule):
                                sizes=self.sizes, return_e_id=False,
                                transform=self.convert_batch,
                                batch_size=self.batch_size, shuffle=True,
-                               num_workers=4)
+                               num_workers=32)
 
     def val_dataloader(self):
         return NeighborSampler(self.adj_t, node_idx=self.val_idx,
                                sizes=self.sizes, return_e_id=False,
                                transform=self.convert_batch,
-                               batch_size=self.batch_size, num_workers=2)
+                               batch_size=self.batch_size, num_workers=16)
 
     def test_dataloader(self):  # Test best validation model once again.
         return NeighborSampler(self.adj_t, node_idx=self.val_idx,
                                sizes=self.sizes, return_e_id=False,
                                transform=self.convert_batch,
-                               batch_size=self.batch_size, num_workers=2)
+                               batch_size=self.batch_size, num_workers=16)
 
     def hidden_test_dataloader(self):
         return NeighborSampler(self.adj_t, node_idx=self.test_idx,
                                sizes=self.sizes, return_e_id=False,
                                transform=self.convert_batch,
-                               batch_size=self.batch_size, num_workers=3)
+                               batch_size=self.batch_size, num_workers=24)
 
     def convert_batch(self, batch_size, n_id, adjs):
         if self.in_memory:
@@ -345,14 +347,14 @@ class RGNN(LightningModule):
         self.test_acc = Accuracy()
 
     def forward(self, x: Tensor, adjs_t: List[SparseTensor]) -> Tensor:
-        for i, adj_t in enumerate(adjs_t):
+        for i, adj_t in enumerate(adjs_t): #不同层邻居够的图
             x_target = x[:adj_t.size(0)]
 
             out = self.skips[i](x_target)
-            for j in range(self.num_relations):
-                edge_type = adj_t.storage.value() == j
+            for j in range(self.num_relations): # 边类型 5 种
+                edge_type = adj_t.storage.value() == j # 存邻接矩阵的时候用稀疏张量，值为边的类型
                 subadj_t = adj_t.masked_select_nnz(edge_type, layout='coo')
-                subadj_t = subadj_t.set_value(None, layout=None)
+                subadj_t = subadj_t.set_value(None, layout=None) # 取出子图，把值置为None
                 if subadj_t.nnz() > 0:
                     out += self.convs[i][j]((x, x_target), subadj_t)
 
@@ -398,7 +400,7 @@ if __name__ == '__main__':
                         choices=['rgat', 'rgraphsage'])
     parser.add_argument('--sizes', type=str, default='25-15')
     parser.add_argument('--in-memory', action='store_true')
-    parser.add_argument('--device', type=str, default='0')
+    parser.add_argument('--device', type=str, default='0,')
     parser.add_argument('--evaluate', action='store_true')
     args = parser.parse_args()
     args.sizes = [int(i) for i in args.sizes.split('-')]
@@ -417,13 +419,13 @@ if __name__ == '__main__':
                                               save_top_k=1)
         trainer = Trainer(gpus=args.device, max_epochs=args.epochs,
                           callbacks=[checkpoint_callback],
-                          default_root_dir=f'logs/{args.model}')
+                          default_root_dir=f'logs/subg/{args.model}')
         trainer.fit(model, datamodule=datamodule)
 
     if args.evaluate:
-        dirs = glob.glob(f'logs/{args.model}/lightning_logs/*')
+        dirs = glob.glob(f'logs/subg/{args.model}/lightning_logs/*')
         version = max([int(x.split(os.sep)[-1].split('_')[-1]) for x in dirs])
-        logdir = f'logs/{args.model}/lightning_logs/version_{version}'
+        logdir = f'logs/subg/{args.model}/lightning_logs/version_{version}'
         print(f'Evaluating saved model in {logdir}...')
         ckpt = glob.glob(f'{logdir}/checkpoints/*')[0]
 
