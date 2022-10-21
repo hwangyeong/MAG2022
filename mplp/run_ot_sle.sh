@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 export DGLBACKEND=pytorch
+export CUDA_VISIBLE_DEVICES=5
 
 MAG_BASE_PATH=/data/zhaohuanjing/mag/ # modify to your workspace
 
 MAG_INPUT_PATH=$MAG_BASE_PATH/dataset_path/  # The MAG240M-LSC dataset should be placed here
 
 MAG_CODE_PATH=$MAG_BASE_PATH/mplp/
-MAG_PREP_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/preprocess/
-MAG_RGAT_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/rgat/
-MAG_FEAT_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/feature/
+# MAG_PREP_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/preprocess/
+# MAG_RGAT_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/rgat/
+# MAG_FEAT_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/feature/
 MAG_MPLP_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/mplp/
-MAG_SUBM_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/submission/
+# MAG_SUBM_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/submission/
 
 
 # mkdir -p $MAG_PREP_PATH
@@ -23,12 +24,12 @@ MAG_SUBM_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/submission/
 #         --full-output-path $MAG_PREP_PATH/full_feat.npy
 
 
-mkdir -p $MAG_FEAT_PATH
-python3 $MAG_CODE_PATH/feature.py \
-        $MAG_INPUT_PATH \
-        $MAG_PREP_PATH/dgl_graph_full_heterogeneous_csr.bin \
-        $MAG_FEAT_PATH \
-        --seed=42
+# mkdir -p $MAG_FEAT_PATH
+# python3 $MAG_CODE_PATH/feature.py \
+#         $MAG_INPUT_PATH \
+#         $MAG_PREP_PATH/dgl_graph_full_heterogeneous_csr.bin \
+#         $MAG_FEAT_PATH \
+#         --seed=42
 
 
 # mkdir -p $MAG_RGAT_PATH
@@ -49,21 +50,22 @@ python3 $MAG_CODE_PATH/feature.py \
 
 # mkdir -p $MAG_MPLP_PATH/output
 
-# for seed in $(seq 0 7);
-# do
-#     python3 $MAG_CODE_PATH/mplp.py \
-#             $MAG_INPUT_PATH \
-#             $MAG_MPLP_PATH/data/ \
-#             $MAG_MPLP_PATH/output/seed${seed} \
-#             --gpu \
-#             --seed=${seed} \
-#             --batch_size=10240 \
-#             --epochs=200 \
-#             --num_layers=2 \
-#             --learning_rate=0.01 \
-#             --dropout=0.5 \
-#             --num_splits=5
-# done
+python3 $MAG_CODE_PATH/mplp_ot_sle.py \
+        $MAG_INPUT_PATH \
+        $MAG_MPLP_PATH/data/ \
+        $MAG_MPLP_PATH/output_temp/ \
+        --gpu \
+        --finetune \
+        --seed=0 \
+        --batch_size=1000000 \
+        --epochs=200 \
+        --num_layers=2 \
+        --learning_rate=0.01 \
+        --hidden=64 \
+        --dropout=0.5 \
+        --threshold=0.9 \
+        --num_runs=2
+
 
 
 # mkdir -p $MAG_SUBM_PATH

@@ -53,18 +53,18 @@ acc = evaluator.eval(
 print("valid ensemble (average) accurate: %.4f" % acc)
 
 
-print("\nEnsembling predictions for test dataset...")
-filenames = glob.glob(os.path.join(input_path, "seed*", "cv-*", "y_pred_test.npy"))
+# print("\nEnsembling predictions for test dataset...")
+# filenames = glob.glob(os.path.join(input_path, "seed*", "cv-*", "y_pred_test.npy"))
 
-y_pred_test_all = []
-for fname in filenames:
-    print(fname)
-    y = torch.as_tensor(np.load(fname)).softmax(axis=1).numpy()
-    y_pred_test_all.append(y)
-nsample, ndim = y_pred_test_all[0].shape
+# y_pred_test_all = []
+# for fname in filenames:
+#     print(fname)
+#     y = torch.as_tensor(np.load(fname)).softmax(axis=1).numpy()
+#     y_pred_test_all.append(y)
+# nsample, ndim = y_pred_test_all[0].shape
 
-y_pred_test = np.concatenate(y_pred_test_all).reshape((-1, nsample, ndim)).mean(axis=0)
-res = {'y_pred': y_pred_test.argmax(axis=1)}
+# y_pred_test = np.concatenate(y_pred_test_all).reshape((-1, nsample, ndim)).mean(axis=0)
+# res = {'y_pred': y_pred_test.argmax(axis=1)}
 
-print("Saving SUBMISSION to %s" % output_path)
-evaluator.save_test_submission(res, output_path)
+# print("Saving SUBMISSION to %s" % output_path)
+# evaluator.save_test_submission(res, output_path)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from pyexpat import features
 import sys
 import os
 import errno
@@ -202,6 +203,29 @@ def calc_neighborsample_feat_features(graph, node_ids, metapath, features, featu
     return feat
 
 
+def calc_neighborsample_heter_feat_features(graph, node_ids, metapath, feat_paper, target_type, 
+                        feat_author=None, feat_institution=None, feature_dim=768):
+    feat = np.zeros((len(node_ids), feature_dim), dtype=np.float32)
+    if target_type == 'p':
+        features = feat_paper
+    elif target_type == 'a':
+        features = feat_author
+    elif target_type == 'i':
+        features = feat_institution
+    node_ids = np.array(node_ids)
+    for i, nids0 in enumerate(tqdm.tqdm(node_ids)):
+        nids = nids0
+        for mp in metapath:
+            _, nids = map(lambda x: x.numpy(), graph.out_edges(nids, form='uv', etype=mp))
+        nids = np.unique(nids[(nids != nids0)])
+
+        if len(nids) > 0:
+            feat[i, :] = features[nids].astype(np.float32).mean(axis=0)
+        else:
+            feat[i, :] = 0
+    return feat
+
+
 def calc_neighborsample_filter_label_features(graph, node_ids, metapath, labels, num_classes=153, ftype='least', num_common=2):
     if ftype not in {'least', 'common'}:
         raise ValueError("Unknown ftype: %r, only support 'least' and 'common'" % ftype)
@@ -268,6 +292,31 @@ def calc_neighborsample_filter_feat_features(graph, node_ids, metapath, features
             feat[i, :] = 0
     return feat
 
+def feature_project(features, embed_size):
+    for ii in range(len(features)):
+        if features[ii].size(1) != embed_size:
+            rand_weight = torch.Tensor(features[ii].size(1), embed_size).uniform_(-0.5, 0.5)
+            features[ii] = features[ii] @ rand_weight
+
+def load_data(datapath, feat_info, device=None):
+    logger.info("Loading data from %s" % datapath)
+
+    x_all = []
+    for i, (fn, _, _) in enumerate(feat_info):
+        logger.info("Loading features for %d: %s ..." % (i, fn.upper()))
+        feat = []
+        fname = os.path.join(datapath, '%s.npy' % fn)
+        logger.info("Loading %s" % fname)
+        feat = torch.from_numpy(np.load(fname)).to(device, torch.float32)
+        x_all.append(feat)
+
+    logger.info("Loading labels ...")
+    fname = os.path.join(datapath, 'y_base.npy')
+    logger.info("Loading %s" % fname)
+    y_all = torch.from_numpy(np.load(fname)).to(device, torch.long)
+
+    return x_all, y_all
+
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(
@@ -275,9 +324,9 @@ def parse_args(args=None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('dataset_path', help='The directory of dataset')
-    parser.add_argument('graph_filename', help='The filename of input heterogeneous graph (coo or csr format)')
-    parser.add_argument('output_path', help='The directory of output data')
+    # parser.add_argument('dataset_path', help='The directory of dataset')
+    # parser.add_argument('graph_filename', help='The filename of input heterogeneous graph (coo or csr format)')
+    # parser.add_argument('output_path', help='The directory of output data')
     parser.add_argument('--seed', type=int, default=42)
 
     args = parser.parse_args()
@@ -288,11 +337,46 @@ if __name__ == '__main__':
 
     args = parse_args()
     logger.info(args)
+    args.dataset_path = "/data/zhaohuanjing/mag/dataset_path"
+    # args.feature_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/feature/"
+    args.graph_filename = "/data/zhaohuanjing/mag/dataset_path/mplp_data/preprocess/dgl_graph_full_heterogeneous_csr.bin"
+    args.output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/feature/"
+    args.preprocess_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/preprocess"
+    args.gpu = True
+    args.emb_size = 256
 
     mkdirs(args.output_path)
     seed_everything(args.seed)
+    device = torch.device('cuda' if args.gpu and torch.cuda.is_available() else 'cpu')
 
     dataset = MAG240MDataset(root=args.dataset_path)
+    num_feats = dataset.num_paper_features # 原paper属性维度
+
+    # feat_info = [
+    #     ('x_rgat_1024', 1024, 128),
+    #     ('x_base', 768, 128),
+    #     ('x_pcbpcp_rw_lratio', 153, 32),
+    #     ('x_pcbpcp_rw_top10_lratio', 153, 32),
+    #     ('x_pcp_rw_lratio', 153, 32),
+    #     ('x_pcpcbp_rw_lratio', 153, 32),
+    #     ('x_pcpcbp_rw_top10_lratio', 153, 32),
+    #     ('x_pcpcp_rw_lratio', 153, 32),
+    #     ('x_pcpcp_rw_top10_lratio', 153, 32),
+    #     ('x_pwbawp_rw_lratio', 153, 32),
+    #     ('x_pwbawp_rw_top10_lratio', 153, 32),
+    #     ('x_pwbawp_ns_l_lratio', 153, 32),
+    #     ('x_pwbawp_ns_c2_lratio', 153, 32),
+    #     ('x_pwbawp_ns_c4_lratio', 153, 32)
+    # ]
+
+    # logger.info("A Total of %d different type features" % len(feat_info))
+    # logger.info(feat_info)
+
+    # x_all, y_all = load_data(args.input_path, feat_info, device)
+    # logger.info("<=2019: %d, >=2020: %d" % (y_all.shape[0], x_all[0].shape[0] - y_all.shape[0]))
+
+
+
 
     node_ids = np.concatenate(
         [dataset.get_idx_split(c).astype(np.int64) for c in ['train', 'valid', 'test']]
@@ -302,6 +386,9 @@ if __name__ == '__main__':
     paper_year = dataset.all_paper_year
 
     feature_dim, num_classes = paper_feat.shape[1], dataset.num_classes
+    author_feat = np.memmap(os.path.join(args.preprocess_path, 'author.npy'), mode='r', dtype='float16', shape=(dataset.num_authors, feature_dim))
+    ins_feat = np.memmap(os.path.join(args.preprocess_path, 'inst.npy'), mode='r', dtype='float16', shape=(dataset.num_institutions, feature_dim))
+
     logger.info("Paper feature dimension: %d, Paper class number: %d" % (feature_dim, num_classes))
 
     graph = dgl.load_graphs(args.graph_filename)[0][0]
@@ -364,16 +451,21 @@ if __name__ == '__main__':
     #     'pwbawp': ['writed_by', 'writes']
     # }
     metapaths = {
-        'awp': ['writes']
+        'pwba': ['writed_by'],
+        'pwbaawi': ['writed_by', 'affiliated_with'],
+        'pcpwba': ['cites', 'writed_by'],
+        'pcbpwba': ['cited_by', 'writed_by'],
     }
     for n, mp in metapaths.items():
         logger.info(n, mp)
-        x = calc_neighborsample_feat_features(graph, node_ids, mp, paper_feat, feature_dim)
+        x = calc_neighborsample_heter_feat_features(graph, node_ids, mp, paper_feat, n[-1], 
+                        feat_author=author_feat, feat_institution=ins_feat, feature_dim=768)
+        # x = calc_neighborsample_feat_features(graph, node_ids, mp, paper_feat, feature_dim)
         np.save(os.path.join(args.output_path, 'x_%s_ns_fmean.npy' % n), x)
-        # x = calc_neighborsample_label_features(graph, node_ids, mp, paper_label, num_classes)
+        x = calc_neighborsample_label_features(graph, node_ids, mp, paper_label, num_classes)
         # np.save(os.path.join(args.output_path, 'x_%s_ns_lratio.npy' % n), x)
 
-    # neighbor sample by 'least' or 'common'
+    # # neighbor sample by 'least' or 'common'
     # metapaths = {
     #     'pwbawp': ['writed_by', 'writes']
     # }
@@ -400,4 +492,4 @@ if __name__ == '__main__':
     #                                                   ftype='least')
     #     np.save(os.path.join(args.output_path, 'x_%s_ns_l_lratio.npy' % n), x)
 
-    # logger.info("DONE")
+    logger.info("DONE")

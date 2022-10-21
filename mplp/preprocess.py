@@ -73,7 +73,7 @@ with tqdm.trange(0, dataset.num_paper_features, BLOCK_COLS) as tq: #几列几列
         tq.set_postfix_str('Writing institution features...')
         inst_feat[:, start:start + BLOCK_COLS] = g.nodes['institution'].data['x'].numpy().astype('float16')
         del g.nodes['paper'].data['x']
-        del g.nodes['author'].data['x']F
+        del g.nodes['author'].data['x']
         del g.nodes['institution'].data['x']
 author_feat.flush()
 inst_feat.flush()

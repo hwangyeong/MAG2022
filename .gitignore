@@ -71,9 +71,13 @@ jupyter
 
 .DS_Store
 
+*.pt
+
 dataset_path
 nohup*
 valid_64
 output
 ROOT
 result
+results
+
