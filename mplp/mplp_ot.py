@@ -167,7 +167,7 @@ if __name__ == '__main__':
     args = parse_args()
     logger.info(args)
     # args.dataset_path = "dataset_path"
-    # args.input_path = "dataset_path/mplp_data/mplp/data"
+    # args.input_path = "dataset_path/mplp_data/feature"
     # args.output_path = "dataset_path/mplp_data/mplp/output_temp"
     # args.gpu = True
     # args.finetune = True
@@ -231,10 +231,10 @@ if __name__ == '__main__':
 
     split_nids = dataset.get_idx_split()
 
-    node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test']])
+    node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test-whole']])
     year_all = dataset.paper_year[node_ids].astype(np.int32)
 
-    ntra, nval, ntes = [len(split_nids[c]) for c in ['train', 'valid', 'test']]
+    ntra, nval, ntes = [len(split_nids[c]) for c in ['train', 'valid', 'test-whole']]
 
     train_idx0 = np.arange(ntra)
     valid_idx0 = np.arange(ntra, ntra + nval)
