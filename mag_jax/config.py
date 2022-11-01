@@ -31,17 +31,18 @@ def get_config(debug: bool = False) -> config_dict.ConfigDict:
               predictions_dir=config_dict.placeholder(str),
               # 5 for model selection and early stopping, 50 for final eval.
               num_eval_iterations_to_ensemble=5,
+            #   num_eval_iterations_to_ensemble=1,
               dataset_kwargs=dict(
                   data_root='/data/',
                   online_subsampling_kwargs=dict(
-                    #   max_nb_neighbours_per_type=[
-                    #       [[40, 20, 0, 40], [0, 0, 0, 0], [0, 0, 0, 0]],
-                    #       [[40, 20, 0, 40], [40, 0, 10, 0], [0, 0, 0, 0]],
-                    #   ],
                       max_nb_neighbours_per_type=[
-                          [[20, 10, 0, 20], [0, 0, 0, 0], [0, 0, 0, 0]],
-                          [[20, 10, 0, 20], [20, 0, 5, 0], [0, 0, 0, 0]],
+                          [[40, 20, 0, 40], [0, 0, 0, 0], [0, 0, 0, 0]],
+                          [[40, 20, 0, 40], [40, 0, 10, 0], [0, 0, 0, 0]],
                       ],
+                    #   max_nb_neighbours_per_type=[
+                    #       [[20, 10, 0, 20], [0, 0, 0, 0], [0, 0, 0, 0]],
+                    #       [[20, 10, 0, 20], [20, 0, 5, 0], [0, 0, 0, 0]],
+                    #   ],
                       remove_future_nodes=True,
                       deduplicate_nodes=True,
                   ),

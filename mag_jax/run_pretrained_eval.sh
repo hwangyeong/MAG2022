@@ -66,7 +66,8 @@ SPLIT="valid"
 # 10-25 minutes (depending on the GPU) on the test set, and about 2-3 minutes
 # for the corresponding k-fold split of the validation set.
 
-EPOCHS_TO_ENSEMBLE=5
+EPOCHS_TO_ENSEMBLE=1
+# EPOCHS_TO_ENSEMBLE=5
 # EPOCHS_TO_ENSEMBLE=50
 
 DATA_ROOT=${TASK_ROOT}/data/
@@ -88,23 +89,24 @@ for K_FOLD_INDEX in {0..9}; do
   python "${SCRIPT_DIR}"/experiment.py \
       --jaxline_mode="eval" \
       --config="${SCRIPT_DIR}"/config.py  \
-      --config.one_off_evaluate=True \ # .
+      --config.one_off_evaluate=True \
       --config.checkpoint_dir=${CHECKPOINT_DIR}/${K_FOLD_INDEX} \
-      --config.restore_path=${RESTORE_PATH} \ #.
+      --config.restore_path=${RESTORE_PATH} \
       --config.experiment_kwargs.config.dataset_kwargs.data_root=${DATA_ROOT} \
       --config.experiment_kwargs.config.dataset_kwargs.k_fold_split_id=${K_FOLD_INDEX} \
       --config.experiment_kwargs.config.num_eval_iterations_to_ensemble=${EPOCHS_TO_ENSEMBLE} \
-      --config.experiment_kwargs.config.predictions_dir=${OUTPUT_DIR}/${K_FOLD_INDEX} \ #.
+      --config.experiment_kwargs.config.predictions_dir=${OUTPUT_DIR}/${K_FOLD_INDEX} \
       --config.experiment_kwargs.config.eval.split=${SPLIT}
+      # --config.predictions_dir=${RESTORE_PATH}
 
 done
 
 
-python "${SCRIPT_DIR}"/ensemble_predictions.py \
-     --split=${SPLIT} \
-     --data_root=${DATA_ROOT} \
-     --predictions_path=${OUTPUT_DIR} \
-     --output_path=${OUTPUT_DIR}
+# python "${SCRIPT_DIR}"/ensemble_predictions.py \
+#      --split=${SPLIT} \
+#      --data_root=${DATA_ROOT} \
+#      --predictions_path=${OUTPUT_DIR} \
+#      --output_path=${OUTPUT_DIR}
 
 
 echo "Done"

@@ -14,7 +14,11 @@ from torch.utils.data import DataLoader
 
 from ogb.lsc import MAG240MDataset, MAG240MEvaluator
 
+import wandb
+import glob
+import socket
 import logging
+from models import SAGN, GAMLP
 
 
 logging.basicConfig(
@@ -140,6 +144,7 @@ def parse_args(args=None):
 
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--num_layers', type=int, default=2)
+    parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--no_batch_norm', action='store_true')
     parser.add_argument('--relu_last', action='store_true')
     parser.add_argument('--dropout', type=float, default=0.5)
@@ -150,6 +155,7 @@ def parse_args(args=None):
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--mlp_hidden', type=int, default=512)
     parser.add_argument('--finetune', action='store_true')
+    parser.add_argument('--hidden', type=int, default=128)
 
     args = parser.parse_args()
     return args
@@ -159,6 +165,22 @@ if __name__ == '__main__':
 
     args = parse_args()
     logger.info(args)
+    seed_path = args.output_path
+
+    wandb_on = args.wandb
+    
+
+    if wandb_on:
+        name = args.output_path.split('/')[-1]
+        wandb.init(config={"current": "rgat1024_label_m2v_feat"},
+                project="MAG240M-OGB",
+                entity="hwangyeong",
+                notes=socket.gethostname(),
+                name=name,
+                dir='results/wandb_res',
+                job_type="training",
+                reinit=True)
+        wandb.config.update(args)
 
     mkdirs(args.output_path)
     seed_everything(args.seed)
@@ -184,7 +206,24 @@ if __name__ == '__main__':
         ('x_pwbawp_rw_top10_lratio', 153, 32),
         ('x_pwbawp_ns_l_lratio', 153, 32),
         ('x_pwbawp_ns_c2_lratio', 153, 32),
-        ('x_pwbawp_ns_c4_lratio', 153, 32)
+        ('x_pwbawp_ns_c4_lratio', 153, 32),
+
+        ('x_m2v_64', 64, 128),
+
+        ('x_pcbpcbp_ns_fmean', 768, 32),
+        ('x_pcbpcp_ns_fmean', 768, 32),
+        ('x_pcbp_ns_fmean', 768, 32),
+        ('x_pcpcbp_ns_fmean', 768, 32),
+        ('x_pcpcp_ns_fmean', 768, 32),
+        ('x_pcp_ns_fmean', 768, 32),
+        ('x_pwbawp_ns_fmean', 768, 32),
+        ('x_pcbpwba_ns_fmean', 768, 32),
+        ('x_pcpwba_ns_fmean', 768, 32),
+        ('x_pwbaawi_ns_fmean', 768, 32),
+        ('x_pwba_ns_fmean', 768, 32),
+
+        ('3layer_x_rgat_1024', 1024, 128),
+        # ('x_pca_129', 129, 64)
     ]
 
     logger.info("A Total of %d different type features" % len(feat_info))
@@ -195,7 +234,7 @@ if __name__ == '__main__':
 
     split_nids = dataset.get_idx_split()
 
-    node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test-whole']])
+    node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test-whole']])    
     year_all = dataset.paper_year[node_ids].astype(np.int32)
 
     ntra, nval, ntes = [len(split_nids[c]) for c in ['train', 'valid', 'test-whole']]
@@ -256,6 +295,9 @@ if __name__ == '__main__':
             dataset.num_classes, args.mlp_hidden,
             args.num_layers, args.dropout, not args.no_batch_norm, args.relu_last
         )
+        # model = SAGN([fi[1] for fi in feat_info], args.hidden, dataset.num_classes, len(feat_info),
+        #                 args.num_layers, 1, dropout=args.dropout)
+
         if k == 0:
             logger.info(model)
             logger.info('#Params: %d' % sum([p.numel() for p in model.parameters()]))
@@ -296,6 +338,11 @@ if __name__ == '__main__':
                     y_pred.append(y.argmax(dim=-1).cpu())
                 y_pred = torch.cat(y_pred, dim=-1)
             valid_acc = evaluator.eval({'y_true': y_all[valid_idx].cpu(), 'y_pred': y_pred})['acc']
+
+            if wandb_on:
+                wandb.log({"training_train_acc %d" % k: train_acc,
+                        "training_valid_acc %d" % k: valid_acc,
+                        "training_loss %d" % k: loss})
 
             if valid_acc > best_valid_acc:
                 torch.save(model.state_dict(), os.path.join(output_path, 'model.pt'))
@@ -438,5 +485,35 @@ if __name__ == '__main__':
         evaluator.save_test_submission(res, output_path, mode='test-whole')
 
     
+    # eva on all folds
+    print("\nEvaluating at validation dataset...")
+    # y_pred_valid_all = []
+    # acc_all = []
+    y_pred_v = []
+    idx_v = []
+    # y_true_valid = y_all[valid_idx0].cpu()
+    # print(y_true_valid.shape)
+    for fpath in glob.glob(os.path.join(seed_path, 'cv-*')):
+        print("Loading predictions from %s" % fpath)
+        y = torch.as_tensor(np.load(os.path.join(fpath, "y_pred_valid.npy"))).softmax(axis=1).numpy()
+        y_pred_v.append(y)
+        idx = np.load(os.path.join(fpath, "idx_valid.npy"))
+        idx_v.append(idx)
+    idx_v = np.concatenate(idx_v, axis=0)
+    y_pred_v = np.concatenate(y_pred_v, axis=0)
+    y_true_v = y_all[idx_v].cpu()
+    # y_pred_valid_all.append(y_pred_v[np.argsort(idx_v)])
+    y_pred_valid_all = y_pred_v[np.argsort(idx_v)]
+
+    acc = evaluator.eval(
+        {'y_true': y_true_v, 'y_pred': y_pred_v.argmax(axis=1)}
+    )['acc']
+    # acc_all.append(acc)
+    print("valid accurate: %.4f" % acc)
+
+    if wandb_on:
+        wandb.log({"valid accurate": acc})
+
+
 
     logger.info('DONE!')

@@ -21,7 +21,7 @@ y_all = np.concatenate([y_true_train, y_true_valid])
 evaluator = MAG240MEvaluator()
 
 print("\nEvaluating at validation dataset...")
-y_pred_valid_all = []
+# y_pred_valid_all = []
 acc_all = []
 # for seed_path in glob.glob(os.path.join(input_path, 'seed*')):
 seed_path = input_path
@@ -36,13 +36,16 @@ for fpath in glob.glob(os.path.join(seed_path, 'cv-*')):
 idx_v = np.concatenate(idx_v, axis=0)
 y_pred_v = np.concatenate(y_pred_v, axis=0)
 y_true_v = y_all[idx_v]
-y_pred_valid_all.append(y_pred_v[np.argsort(idx_v)])
+# y_pred_valid_all.append(y_pred_v[np.argsort(idx_v)])
+y_pred_valid_all = y_pred_v[np.argsort(idx_v)]
 
 acc = evaluator.eval(
     {'y_true': y_true_v, 'y_pred': y_pred_v.argmax(axis=1)}
 )['acc']
 acc_all.append(acc)
 print("valid accurate: %.4f" % acc)
+
+np.save(os.path.join(seed_path, 'y_pred_valid_all'), y_pred_valid_all)
 
 # print("valid accurate distribution: %.4f +/- %.4f" % (np.mean(acc_all), np.std(acc_all)))
 

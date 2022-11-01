@@ -21,7 +21,7 @@ import logging
 import wandb
 import socket
 
-from models import SAGN
+from models import SAGN, GAMLP
 
 
 logging.basicConfig(
@@ -96,11 +96,14 @@ class MPLP(torch.nn.Module):
         tot_hidden = 0
         for i, j in zip(in_channels, hidden_channels):
             tot_hidden += j
-            mlp = MLP(i, j, j, num_layers, dropout,
-                      batch_norm, relu_last)
+            # mlp = MLP(i, j, j, num_layers, dropout,
+            #           batch_norm, relu_last)
+            mlp = GAMLP(i, j, j, num_layers, dropout,
+                      batch_norm)
             self.mlps.append(mlp)
 
-        self.mlp = MLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm, relu_last)
+        # self.mlp = MLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm, relu_last)
+        self.mlp = GAMLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm)
 
     def reset_parameters(self):
         for mlp in self.mlps:
@@ -171,14 +174,14 @@ if __name__ == '__main__':
     # args.output_path = "dataset_path/mplp_data/mplp/output_temp"
     # args.gpu = True
     # args.finetune = True
-    wandb_on = False
+    wandb_on = True
 
     if wandb_on:
-        wandb.init(config={"current": "mplp_add_f"},
+        wandb.init(config={"current": "mplp_ot"},
                 project="MAG240M-OGB",
                 entity="hwangyeong",
                 notes=socket.gethostname(),
-                name="mplp_add_f",
+                name="mplp_pca",
                 dir='results/wandb_res',
                 job_type="training",
                 reinit=True)
@@ -195,8 +198,10 @@ if __name__ == '__main__':
     num_feats = dataset.num_paper_features
 
     feat_info = [
+        # ('3layer_x_rgat_1024', 1024, 128),
         ('x_rgat_1024', 1024, 128),
         ('x_base', 768, 128),
+        # ('x_pca_129', 129, 128),
         ('x_pcbpcp_rw_lratio', 153, 32),
         ('x_pcbpcp_rw_top10_lratio', 153, 32),
         ('x_pcp_rw_lratio', 153, 32),
@@ -291,13 +296,13 @@ if __name__ == '__main__':
     valid_idx = valid_idx0
     logger.info("KFold: %d, Train: %d, Valid: %d" % (k, len(train_idx), len(valid_idx)))
 
-    model = MPLP(
-        [fi[1] for fi in feat_info], [fi[2] for fi in feat_info],
-        dataset.num_classes,
-        args.num_layers, args.dropout, not args.no_batch_norm, args.relu_last
-    )
-    # model = SAGN([fi[1] for fi in feat_info], args.hidden, dataset.num_classes, len(feat_info),
-    #                     args.num_layers, 1, dropout=args.dropout)
+    # model = MPLP(
+    #     [fi[1] for fi in feat_info], [fi[2] for fi in feat_info],
+    #     dataset.num_classes,
+    #     args.num_layers, args.dropout, not args.no_batch_norm, args.relu_last
+    # )
+    model = SAGN([fi[1] for fi in feat_info], args.hidden, dataset.num_classes, len(feat_info),
+                        args.num_layers, 1, dropout=args.dropout)
 
     if k == 0:
         logger.info(model)

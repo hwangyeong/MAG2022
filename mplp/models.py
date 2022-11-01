@@ -119,3 +119,39 @@ class SAGN(nn.Module):
         out = out.mean(1)
         return out
         # return out, a.mean(1) if a is not None else None
+
+class GAMLP(nn.Module):
+    def __init__(self, in_feats, hidden, out_feats, n_layers, dropout,bns=True):
+        super(FeedForwardNet, self).__init__()
+        self.layers = nn.ModuleList()
+        self.bns = nn.ModuleList()
+        self.n_layers = n_layers
+        if n_layers == 1:
+            self.layers.append(nn.Linear(in_feats, out_feats))
+        else:
+            self.layers.append(nn.Linear(in_feats, hidden))
+            self.bns.append(nn.BatchNorm1d(hidden))
+            for i in range(n_layers - 2):
+                self.layers.append(nn.Linear(hidden, hidden))
+                self.bns.append(nn.BatchNorm1d(hidden))
+            self.layers.append(nn.Linear(hidden, out_feats))
+        if self.n_layers > 1:
+            self.prelu = nn.PReLU()
+            self.dropout = nn.Dropout(dropout)
+        self.norm=bns
+        self.reset_parameters()
+    def reset_parameters(self):
+        gain = nn.init.calculate_gain("relu")
+        for layer in self.layers:
+            nn.init.xavier_uniform_(layer.weight, gain=gain)
+            nn.init.zeros_(layer.bias)
+
+    def forward(self, x):
+        for layer_id, layer in enumerate(self.layers):
+            x = layer(x)
+            if layer_id < self.n_layers -1: 
+                if self.norm:
+                    x = self.dropout(self.prelu(self.bns[layer_id](x)))
+                else:
+                    x = self.dropout(self.prelu(x))
+        return x

@@ -307,12 +307,12 @@ if __name__ == '__main__':
     graph = dgl.load_graphs(args.graph_filename)[0][0]
     graph = graph.formats(['csr'])  # when use crc format, out_edges return incorrect result
 
-    # # 0. base
-    # logger.info('base')
-    # x_base, y_base = paper_feat[node_ids], paper_label[node_ids] # 取出有标签的那些文章的属性和标签
-    # y_base = y_base[y_base >= 0]  # get ride of test
-    # np.save(os.path.join(args.output_path, 'x_base.npy'), x_base)
-    # np.save(os.path.join(args.output_path, 'y_base.npy'), y_base)
+    # 0. base
+    logger.info('base')
+    x_base, y_base = paper_feat[node_ids], paper_label[node_ids] # 取出有标签的那些文章的属性和标签
+    y_base = y_base[y_base >= 0]  # get ride of test
+    np.save(os.path.join(args.output_path, 'x_base.npy'), x_base)
+    np.save(os.path.join(args.output_path, 'y_base.npy'), y_base)
 
     # # 1. random walk
     # metapaths = {

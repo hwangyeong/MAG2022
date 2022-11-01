@@ -94,7 +94,7 @@ y0[test_idx] = test_label
 y[val_idx] = valid_label
 y[test_idx] = test_label
 
-for i in range(5):
+for i in range(5): #把该fold之外其他4个加到训练,该fold测试
     if i == fold_id:
         continue
     train_idx.extend(
@@ -107,7 +107,7 @@ test_idx = split['test']
 # set gold label
 
 y[train_idx].fill(0)
-y[train_idx, labels[train_idx].astype("int32")] = 1
+y[train_idx, labels[train_idx].astype("int32")] = 1 #train_idx的标签转成one-hot
 
 y0[train_idx].fill(0)
 y0[train_idx, labels[train_idx].astype("int32")] = 1

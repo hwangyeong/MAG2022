@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export DGLBACKEND=pytorch
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=7
 
 MAG_BASE_PATH=/data/zhaohuanjing/mag/ # modify to your workspace
 
@@ -50,6 +50,20 @@ MAG_MPLP_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/mplp/
 
 # mkdir -p $MAG_MPLP_PATH/output
 
+# python3 $MAG_CODE_PATH/mplp_ot.py \
+#         $MAG_INPUT_PATH \
+#         $MAG_BASE_PATH/dataset_path/mplp_data/feature/ \
+#         $MAG_MPLP_PATH/output_temp/ \
+#         --gpu \
+#         --finetune \
+#         --seed=0 \
+#         --batch_size=100000 \
+#         --epochs=200 \
+#         --num_layers=2 \
+#         --learning_rate=0.01 \
+#         --dropout=0.5 \
+
+
 python3 $MAG_CODE_PATH/mplp_ot.py \
         $MAG_INPUT_PATH \
         $MAG_BASE_PATH/dataset_path/mplp_data/feature/ \
@@ -57,12 +71,12 @@ python3 $MAG_CODE_PATH/mplp_ot.py \
         --gpu \
         --finetune \
         --seed=0 \
-        --batch_size=100000 \
+        --batch_size=10000 \
         --epochs=200 \
         --num_layers=2 \
         --learning_rate=0.01 \
+        --hidden=512 \
         --dropout=0.5 \
-
 
 
 # mkdir -p $MAG_SUBM_PATH

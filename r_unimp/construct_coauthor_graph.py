@@ -26,17 +26,18 @@ import multiprocessing
 import time
 import pickle as pkl
 import numpy as np
+import os
 
 root = "dataset_path"
 graph_paper2paper = pgl.Graph.load(
-    os.path.join(root, "paper_to_paper_symmetric_pgl_split"))
+    os.path.join(root, "mag240m_kddcup2021", "paper_to_paper_symmetric_pgl_split"))
 graph_paper2author = pgl.Graph.load(
-    os.path.join(root, "paper_to_author_symmetric_pgl_split_src"))
+    os.path.join(root, "mag240m_kddcup2021", "paper_to_author_symmetric_pgl_split_src"))
 graph_author2paper = pgl.Graph.load(
-    os.path.join(root, "paper_to_author_symmetric_pgl_split_dst"))
+    os.path.join(root, "mag240m_kddcup2021", "paper_to_author_symmetric_pgl_split_dst"))
 
 labels = np.load(
-    os.path.join(root, "mag240_kddcup2021", "processed", "paper",
+    os.path.join(root, "mag240m_kddcup2021", "processed", "paper",
                  "node_label.npy"),
     mmap_mode="r")
 
@@ -85,7 +86,7 @@ def get_edge_feat(batch_start):
 if __name__ == "__main__":
     batch_size = 5000
     dataset = np.arange(0, graph_paper2paper.num_nodes, step=batch_size)
-    max_workers = 20
+    max_workers = 30
     edges = []
     with multiprocessing.Pool(max_workers) as pool:
         chunksize = 1000
