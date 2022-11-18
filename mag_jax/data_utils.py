@@ -79,8 +79,11 @@ RAW_NODE_LABELS_FILENAME = RAW_DIR / "node_label.npy"
 RAW_NODE_YEAR_FILENAME = RAW_DIR / "node_year.npy"
 
 TRAIN_INDEX_FILENAME = RAW_DIR / "train_idx.npy"
-VALID_INDEX_FILENAME = RAW_DIR / "train_idx.npy"
-TEST_INDEX_FILENAME = RAW_DIR / "train_idx.npy"
+# VALID_INDEX_FILENAME = RAW_DIR / "train_idx.npy"
+# TEST_INDEX_FILENAME = RAW_DIR / "train_idx.npy"
+VALID_INDEX_FILENAME = RAW_DIR / "valid_idx.npy"
+TEST_INDEX_FILENAME = RAW_DIR / "test_idx.npy"
+
 
 EDGES_PAPER_PAPER_B = PREPROCESSED_DIR / "paper_paper_b.npz"
 EDGES_PAPER_PAPER_B_T = PREPROCESSED_DIR / "paper_paper_b_t.npz"

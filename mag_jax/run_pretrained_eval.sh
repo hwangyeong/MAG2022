@@ -57,8 +57,8 @@ Pre-requisites (See README):
 # each model is trained on the train split + 90% of the validation split,
 # and only evaluated on the remaining 10%, such that each validation paper
 # is left out from training in exactly one of the 10 models.
-# SPLIT="test"
-SPLIT="valid"
+SPLIT="test"
+# SPLIT="valid"
 
 # We used 50 epochs in the submission to sample different subgraphs around
 # each central node.
@@ -66,9 +66,9 @@ SPLIT="valid"
 # 10-25 minutes (depending on the GPU) on the test set, and about 2-3 minutes
 # for the corresponding k-fold split of the validation set.
 
-EPOCHS_TO_ENSEMBLE=1
 # EPOCHS_TO_ENSEMBLE=5
-# EPOCHS_TO_ENSEMBLE=50
+# EPOCHS_TO_ENSEMBLE=5
+EPOCHS_TO_ENSEMBLE=50
 
 DATA_ROOT=${TASK_ROOT}/data/
 MODELS_ROOT=${TASK_ROOT}/models/

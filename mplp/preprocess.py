@@ -1,3 +1,4 @@
+# this code is from 
 # modifed from dgl baseline (https://github.com/dmlc/dgl/tree/master/examples/pytorch/ogb_lsc/MAG240M)
 #   1. change 5 edge types graph to 6 edge types graph
 #   2. save CSR graph for feature process

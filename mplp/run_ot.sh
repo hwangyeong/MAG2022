@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export DGLBACKEND=pytorch
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=1
 
 MAG_BASE_PATH=/data/zhaohuanjing/mag/ # modify to your workspace
 
@@ -75,7 +75,7 @@ python3 $MAG_CODE_PATH/mplp_ot.py \
         --epochs=200 \
         --num_layers=2 \
         --learning_rate=0.01 \
-        --hidden=512 \
+        --mlp_hidden=512 \
         --dropout=0.5 \
 
 

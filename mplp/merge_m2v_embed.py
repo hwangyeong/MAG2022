@@ -1,7 +1,10 @@
 import os
 import numpy as np
+import torch
 from tqdm import tqdm
-from ogb.lsc import MAG240MDataset
+import glob
+import dill
+from ogb.lsc import MAG240MDataset, MAG240MEvaluator
 
 if __name__ == '__main__':
     # process m2v from pgl method
@@ -40,20 +43,110 @@ if __name__ == '__main__':
 
 
 
-    # process pca feat from deepmind method
-    # load pca featurs
-    pca_feats = np.load(
-            "/data/zhaohuanjing/mag/dataset_path/jax_process/data/preprocessed/merged_feat_from_paper_feat_pca_129.npy", mmap_mode="r")
+    # # process pca feat from deepmind method
+    # # load pca featurs
+    # pca_feats = np.load(
+    #         "/data/zhaohuanjing/mag/dataset_path/jax_process/data/preprocessed/merged_feat_from_paper_feat_pca_129.npy", mmap_mode="r")
+    # dataset = MAG240MDataset(root)
+    # split_nids = dataset.get_idx_split()
+    # node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test-whole']])
+    # pca_feats_formplp = pca_feats[node_ids]
+
+    # fpath = "/data/zhaohuanjing/mag/dataset_path/mplp_data/feature/x_pca_129.npy"
+    # np.save(fpath, pca_feats_formplp)
+
+
+
+    # process jax feat from deepmind method
+    jax_feat_train_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/jax_em/one_it_train_set"
+    jax_feat_valid_test_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/jax_em/one_it_valid_test_set"
     dataset = MAG240MDataset(root)
     split_nids = dataset.get_idx_split()
     node_ids = np.concatenate([split_nids['train'], split_nids['valid'], split_nids['test-whole']])
-    pca_feats_formplp = pca_feats[node_ids]
+    train_ids, valid_ids, test_ids = split_nids['train'], split_nids['valid'], split_nids['test-whole']
 
-    fpath = "/data/zhaohuanjing/mag/dataset_path/mplp_data/feature/x_pca_129.npy"
-    np.save(fpath, pca_feats_formplp)
+    y_pred = []
+    idxs = []
+    for fpath in glob.glob(os.path.join(jax_feat_train_path, 'valid*.dill')):
+            print(fpath)
+            inf = dill.load(open(fpath, 'rb'))
+            idxs.append(inf[0])
+            y_pred.append(inf[3])
+    # idxs = np.concatenate(idxs, axis=0)
+    # y_pred = np.concatenate(y_pred, axis=0)
+    # y_pred_sort = y_pred[np.argsort(idxs)]
 
+    for fpath in glob.glob(os.path.join(jax_feat_valid_test_path, 'valid*.dill')):
+            print(fpath)
+            inf = dill.load(open(fpath, 'rb'))
+            idxs.append(inf[0])
+            y_pred.append(inf[3])
+    idxs = np.concatenate(idxs, axis=0)
+    y_pred = np.concatenate(y_pred, axis=0)
+    # y_pred_sort = y_pred[np.argsort(idxs)]
 
+    mask_train = np.zeros(len(node_ids), dtype=np.bool)
+    mask_valid = np.zeros(len(node_ids), dtype=np.bool)
+    mask_test = np.zeros(len(node_ids), dtype=np.bool)
+    for ii in range(len(idxs)):
+            if ii % 10000 == 0:
+                    print(ii)
+            node = idxs[ii] 
+            if node in train_ids:
+                    mask_train[ii] = True
+            elif node in valid_ids:
+                    mask_valid[ii] = True
+            elif node in test_ids:
+                    mask_test[ii] = True
+            else:
+                    print(node)
+    
+    train_idx = idxs[mask_train]
+    valid_idx = idxs[mask_valid]
+    test_idx = idxs[mask_test]
 
-    # process mplp feat from deepmind method
+    y_pred_train = y_pred[mask_train][np.argsort(train_idx)]
+    y_pred_valid = y_pred[mask_valid][np.argsort(valid_idx)]
+    y_pred_test = y_pred[mask_test][np.argsort(test_idx)]
+
+    y_pred = np.concatenate((y_pred_train, y_pred_valid, y_pred_test), axis=0)
+    print(y_pred.shape)
+
+    # fpath = "/data/zhaohuanjing/mag/dataset_path/mplp_data/feature/x_jax_153.npy"
+    # np.save(fpath, y_pred)
+
+    # print(len(split_nids['train']))
+    # print(len(split_nids['valid']))
+    # print(len(split_nids['test-whole']))
+    # print(np.intersect1d(idxs, split_nids['train']).shape)
+    # print(np.intersect1d(idxs, split_nids['valid']).shape)
+    # print(np.intersect1d(idxs, split_nids['test-whole']).shape)
+    # print(y_pred.shape)
+
+    #save_test_challenge
+    # # process test-challenge
+    test_idx = split_nids['test-whole']
+    # print(test_idx.shape)
+    test_challenge_idx = split_nids['test-challenge']
+    size = int(test_idx.max()) + 1
+    test_challenge_mask = torch.zeros(size, dtype=torch.bool)
+    test_challenge_mask[test_challenge_idx] = True
+    test_challenge_mask = test_challenge_mask[test_idx]
+
+    # res = {'y_pred': y_pred_test.argmax(axis=1)}
+    # res['y_pred'] = res['y_pred'][test_challenge_mask]
+    # output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs/try"
+    # print("Saving SUBMISSION to %s" % output_path)
+    # evaluator = MAG240MEvaluator()
+    # evaluator.save_test_submission(res, output_path, mode="test-challenge")
+
+    #process test-dev
+    test_dev_mask = ~test_challenge_mask
+    res = {'y_pred': y_pred_test.argmax(axis=1)}
+    res['y_pred'] = res['y_pred'][test_dev_mask]
+    output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs/try"
+    print("Saving SUBMISSION to %s" % output_path)
+    evaluator = MAG240MEvaluator()
+    evaluator.save_test_submission(res, output_path, mode="test-dev")
 
 

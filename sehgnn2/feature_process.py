@@ -462,7 +462,7 @@ if __name__ == '__main__':
                         feat_author=author_feat, feat_institution=ins_feat, feature_dim=768)
         # x = calc_neighborsample_feat_features(graph, node_ids, mp, paper_feat, feature_dim)
         np.save(os.path.join(args.output_path, 'x_%s_ns_fmean.npy' % n), x)
-        x = calc_neighborsample_label_features(graph, node_ids, mp, paper_label, num_classes)
+        # x = calc_neighborsample_label_features(graph, node_ids, mp, paper_label, num_classes)
         # np.save(os.path.join(args.output_path, 'x_%s_ns_lratio.npy' % n), x)
 
     # # neighbor sample by 'least' or 'common'

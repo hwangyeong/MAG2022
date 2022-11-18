@@ -18,7 +18,6 @@ import wandb
 import glob
 import socket
 import logging
-from models import SAGN, GAMLP
 
 
 logging.basicConfig(
@@ -138,9 +137,9 @@ def parse_args(args=None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('dataset_path', help='The directory of dataset')
-    parser.add_argument('input_path', help='The directory of input data')
-    parser.add_argument('output_path', help='The directory of output data')
+    # parser.add_argument('dataset_path', help='The directory of dataset')
+    # parser.add_argument('input_path', help='The directory of input data')
+    # parser.add_argument('output_path', help='The directory of output data')
 
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--num_layers', type=int, default=2)
@@ -149,10 +148,10 @@ def parse_args(args=None):
     parser.add_argument('--relu_last', action='store_true')
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--learning_rate', type=float, default=0.01)
-    parser.add_argument('--batch_size', type=int, default=380000)
-    parser.add_argument('--epochs', type=int, default=1000)
+    parser.add_argument('--batch_size', type=int, default=10000)
+    parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--num_splits', type=int, default=5)
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--mlp_hidden', type=int, default=512)
     parser.add_argument('--finetune', action='store_true')
     parser.add_argument('--hidden', type=int, default=128)
@@ -165,9 +164,16 @@ if __name__ == '__main__':
 
     args = parse_args()
     logger.info(args)
+
+    args.dataset_path = "dataset_path"
+    args.input_path = "dataset_path/mplp_data/feature"
+    args.output_path = "dataset_path/mplp_data/mplp/outputs/rgat1024_label_m2v_feat_3rgat1024_jax_fhid"
+    args.gpu = True
+    args.finetune = True
+    
     seed_path = args.output_path
 
-    wandb_on = args.wandb
+    wandb_on = False
     
 
     if wandb_on:
@@ -208,20 +214,20 @@ if __name__ == '__main__':
         ('x_pwbawp_ns_c2_lratio', 153, 32),
         ('x_pwbawp_ns_c4_lratio', 153, 32),
 
-        # ('x_jax_153', 153, 32),
+        ('x_jax_153', 153, 32),
         ('x_m2v_64', 64, 128),
 
-        # ('x_pcbpcbp_ns_fmean', 768, 32),
-        # ('x_pcbpcp_ns_fmean', 768, 32),
-        # ('x_pcbp_ns_fmean', 768, 32),
-        # ('x_pcpcbp_ns_fmean', 768, 32),
-        # ('x_pcpcp_ns_fmean', 768, 32),
-        # ('x_pcp_ns_fmean', 768, 32),
-        # ('x_pwbawp_ns_fmean', 768, 32),
-        # ('x_pcbpwba_ns_fmean', 768, 32),
-        # ('x_pcpwba_ns_fmean', 768, 32),
-        # ('x_pwbaawi_ns_fmean', 768, 32),
-        # ('x_pwba_ns_fmean', 768, 32),
+        ('x_pcbpcbp_ns_fmean', 768, 32),
+        ('x_pcbpcp_ns_fmean', 768, 32),
+        ('x_pcbp_ns_fmean', 768, 32),
+        ('x_pcpcbp_ns_fmean', 768, 32),
+        ('x_pcpcp_ns_fmean', 768, 32),
+        ('x_pcp_ns_fmean', 768, 32),
+        ('x_pwbawp_ns_fmean', 768, 32),
+        ('x_pcbpwba_ns_fmean', 768, 32),
+        ('x_pcpwba_ns_fmean', 768, 32),
+        ('x_pwbaawi_ns_fmean', 768, 32),
+        ('x_pwba_ns_fmean', 768, 32),
 
         # ('3layer_x_rgat_1024', 1024, 128),
         # ('x_pca_129', 129, 64)
@@ -304,124 +310,106 @@ if __name__ == '__main__':
             logger.info('#Params: %d' % sum([p.numel() for p in model.parameters()]))
         model = model.to(device)
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-        sched = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.25)
+        # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+        # sched = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.25)
 
-        best_valid_acc = 0
-        for epoch in range(1, 1 + args.epochs):
+        # best_valid_acc = 0
+        # for epoch in range(1, 1 + args.epochs):
 
-            model.train()
-            total_loss = 0
-            for idx in DataLoader(train_idx, args.batch_size, shuffle=True): # train
-                optimizer.zero_grad()
-                y_pred = model([x[idx].to(torch.float32) for x in x_all])
-                y_true = y_all[idx]
-                loss = F.cross_entropy(y_pred, y_true, weight=weight)
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item() * idx.numel()
-            loss = total_loss / train_idx.shape[0]
+        #     model.train()
+        #     total_loss = 0
+        #     for idx in DataLoader(train_idx, args.batch_size, shuffle=True): # train
+        #         optimizer.zero_grad()
+        #         y_pred = model([x[idx].to(torch.float32) for x in x_all])
+        #         y_true = y_all[idx]
+        #         loss = F.cross_entropy(y_pred, y_true, weight=weight)
+        #         loss.backward()
+        #         optimizer.step()
+        #         total_loss += loss.item() * idx.numel()
+        #     loss = total_loss / train_idx.shape[0]
 
-            with torch.no_grad(): # compute train accuracy
-                model.eval()
-                y_pred = []
-                for idx in DataLoader(train_idx, args.batch_size):
-                    y = model([x[idx].to(torch.float32) for x in x_all])
-                    y_pred.append(y.argmax(dim=-1).cpu())
-                y_pred = torch.cat(y_pred, dim=-1)
-                train_acc = evaluator.eval({'y_true': y_all[train_idx].cpu(), 'y_pred': y_pred})['acc']
+        #     with torch.no_grad(): # compute train accuracy
+        #         model.eval()
+        #         y_pred = []
+        #         for idx in DataLoader(train_idx, args.batch_size):
+        #             y = model([x[idx].to(torch.float32) for x in x_all])
+        #             y_pred.append(y.argmax(dim=-1).cpu())
+        #         y_pred = torch.cat(y_pred, dim=-1)
+        #         train_acc = evaluator.eval({'y_true': y_all[train_idx].cpu(), 'y_pred': y_pred})['acc']
 
-            with torch.no_grad(): # compute valid accuracy
-                model.eval()
-                y_pred = []
-                for idx in DataLoader(valid_idx, args.batch_size):
-                    y = model([x[idx].to(torch.float32) for x in x_all])
-                    y_pred.append(y.argmax(dim=-1).cpu())
-                y_pred = torch.cat(y_pred, dim=-1)
-            valid_acc = evaluator.eval({'y_true': y_all[valid_idx].cpu(), 'y_pred': y_pred})['acc']
+        #     with torch.no_grad(): # compute valid accuracy
+        #         model.eval()
+        #         y_pred = []
+        #         for idx in DataLoader(valid_idx, args.batch_size):
+        #             y = model([x[idx].to(torch.float32) for x in x_all])
+        #             y_pred.append(y.argmax(dim=-1).cpu())
+        #         y_pred = torch.cat(y_pred, dim=-1)
+        #     valid_acc = evaluator.eval({'y_true': y_all[valid_idx].cpu(), 'y_pred': y_pred})['acc']
 
-            if wandb_on:
-                wandb.log({"training_train_acc %d" % k: train_acc,
-                        "training_valid_acc %d" % k: valid_acc,
-                        "training_loss %d" % k: loss})
+        #     if wandb_on:
+        #         wandb.log({"training_train_acc %d" % k: train_acc,
+        #                 "training_valid_acc %d" % k: valid_acc,
+        #                 "training_loss %d" % k: loss})
 
-            if valid_acc > best_valid_acc:
-                torch.save(model.state_dict(), os.path.join(output_path, 'model.pt'))
-                best_valid_acc = valid_acc
+        #     if valid_acc > best_valid_acc:
+        #         torch.save(model.state_dict(), os.path.join(output_path, 'model.pt'))
+        #         best_valid_acc = valid_acc
 
-            logger.info('Epoch: %03d, lr: %.7f, Loss: %.4f, Train: %.4f, Valid: %.4f, Best: %.4f' %
-                        (epoch, sched.get_last_lr()[0], loss, train_acc, valid_acc, best_valid_acc))
+        #     logger.info('Epoch: %03d, lr: %.7f, Loss: %.4f, Train: %.4f, Valid: %.4f, Best: %.4f' %
+        #                 (epoch, sched.get_last_lr()[0], loss, train_acc, valid_acc, best_valid_acc))
 
-            sched.step()
+        #     sched.step()
 
-        # # evaluate before fintuning
-        # logger.info('Evaluating on valid set before fintuning')
-        # model.load_state_dict(torch.load(os.path.join(output_path, 'model.pt')))
-        # model = model.to(device)        
-        # model.eval()
 
-        # with torch.no_grad():
-        #     model.eval()
-        #     y_pred = []
-        #     for idx in DataLoader(valid_idx, args.batch_size):
-        #         y = model([x[idx].to(torch.float32) for x in x_all])
-        #         y_pred.append(y.argmax(dim=-1).cpu())
-        #     y_pred = torch.cat(y_pred, dim=-1)
-        #     y_true = y_all[valid_idx].cpu()
-        #     acc = evaluator.eval(
-        #         {'y_true': y_true, 'y_pred': y_pred}
-        #     )['acc']
-        #     logger.info("valid accurate: %.4f" % acc)
-
-        if args.finetune:
-            logger.info("Finetune the model using latest data ...")
-            model.load_state_dict(torch.load(os.path.join(output_path, 'model.pt')))
-            model = model.to(device)
+        # if args.finetune:
+        #     logger.info("Finetune the model using latest data ...")
+        #     model.load_state_dict(torch.load(os.path.join(output_path, 'model.pt')))
+        #     model = model.to(device)
 
 
 
-            train_idx_ft = train_idx[year_all[train_idx] >= 2018] # 微调
-            logger.info("Train: %d, Valid: %d" % (len(train_idx_ft), len(valid_idx))) # valid_idx 相当于这个交叉下的test
+        #     train_idx_ft = train_idx[year_all[train_idx] >= 2018] # 微调
+        #     logger.info("Train: %d, Valid: %d" % (len(train_idx_ft), len(valid_idx))) # valid_idx 相当于这个交叉下的test
 
-            best_valid_acc = 0
-            for epoch in range(1, 40):
+        #     best_valid_acc = 0
+        #     for epoch in range(1, 40):
 
-                model.train()
-                total_loss = 0
-                for idx in DataLoader(train_idx_ft, args.batch_size, shuffle=True):
-                    optimizer.zero_grad()
-                    y_pred = model([x[idx].to(torch.float32) for x in x_all])
-                    y_true = y_all[idx]
-                    loss = F.cross_entropy(y_pred, y_true, weight=weight)
-                    loss.backward()
-                    optimizer.step()
-                    total_loss += loss.item() * idx.numel()
-                loss = total_loss / train_idx_ft.shape[0]
+        #         model.train()
+        #         total_loss = 0
+        #         for idx in DataLoader(train_idx_ft, args.batch_size, shuffle=True):
+        #             optimizer.zero_grad()
+        #             y_pred = model([x[idx].to(torch.float32) for x in x_all])
+        #             y_true = y_all[idx]
+        #             loss = F.cross_entropy(y_pred, y_true, weight=weight)
+        #             loss.backward()
+        #             optimizer.step()
+        #             total_loss += loss.item() * idx.numel()
+        #         loss = total_loss / train_idx_ft.shape[0]
 
-                with torch.no_grad():
-                    model.eval()
-                    y_pred = []
-                    for idx in DataLoader(train_idx_ft, args.batch_size):
-                        y = model([x[idx].to(torch.float32) for x in x_all])
-                        y_pred.append(y.argmax(dim=-1).cpu())
-                    y_pred = torch.cat(y_pred, dim=-1)
-                    train_acc = evaluator.eval({'y_true': y_all[train_idx_ft].cpu(), 'y_pred': y_pred})['acc']
+        #         with torch.no_grad():
+        #             model.eval()
+        #             y_pred = []
+        #             for idx in DataLoader(train_idx_ft, args.batch_size):
+        #                 y = model([x[idx].to(torch.float32) for x in x_all])
+        #                 y_pred.append(y.argmax(dim=-1).cpu())
+        #             y_pred = torch.cat(y_pred, dim=-1)
+        #             train_acc = evaluator.eval({'y_true': y_all[train_idx_ft].cpu(), 'y_pred': y_pred})['acc']
 
-                with torch.no_grad():
-                    model.eval()
-                    y_pred = []
-                    for idx in DataLoader(valid_idx, args.batch_size):
-                        y = model([x[idx].to(torch.float32) for x in x_all])
-                        y_pred.append(y.argmax(dim=-1).cpu())
-                    y_pred = torch.cat(y_pred, dim=-1)
-                valid_acc = evaluator.eval({'y_true': y_all[valid_idx].cpu(), 'y_pred': y_pred})['acc']
+        #         with torch.no_grad():
+        #             model.eval()
+        #             y_pred = []
+        #             for idx in DataLoader(valid_idx, args.batch_size):
+        #                 y = model([x[idx].to(torch.float32) for x in x_all])
+        #                 y_pred.append(y.argmax(dim=-1).cpu())
+        #             y_pred = torch.cat(y_pred, dim=-1)
+        #         valid_acc = evaluator.eval({'y_true': y_all[valid_idx].cpu(), 'y_pred': y_pred})['acc']
 
-                if valid_acc > best_valid_acc:
-                    torch.save(model.state_dict(), os.path.join(output_path, 'model-finetune.pt'))
-                    best_valid_acc = valid_acc
+        #         if valid_acc > best_valid_acc:
+        #             torch.save(model.state_dict(), os.path.join(output_path, 'model-finetune.pt'))
+        #             best_valid_acc = valid_acc
 
-                logger.info('Epoch: %03d, lr: %.7f, Loss: %.4f, Train: %.4f, Valid: %.4f, Best: %.4f' %
-                            (epoch, sched.get_last_lr()[0], loss, train_acc, valid_acc, best_valid_acc))
+        #         logger.info('Epoch: %03d, lr: %.7f, Loss: %.4f, Train: %.4f, Valid: %.4f, Best: %.4f' %
+        #                     (epoch, sched.get_last_lr()[0], loss, train_acc, valid_acc, best_valid_acc))
 
         logger.info('Evaluating on valid set')
         if not args.finetune:

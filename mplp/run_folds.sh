@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export DGLBACKEND=pytorch
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=2
 
 MAG_BASE_PATH=/data/zhaohuanjing/mag/ # modify to your workspace
 
@@ -14,12 +14,10 @@ MAG_MPLP_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/mplp/
 # MAG_SUBM_PATH=$MAG_BASE_PATH/dataset_path/mplp_data/submission/
 
 
-
-
 # !!!!!!!! NOTICE
 # # !!! Please change the filename "outputs/try" for each run if you want to save the result. !!!
 
-MAG_OUTPUT_PATH=$MAG_MPLP_PATH/outputs/rgat1024_label_m2v_feat_3rgat1024_fhid_seed2
+MAG_OUTPUT_PATH=$MAG_MPLP_PATH/outputs/rgat1024_label_m2v
 
 python3 $MAG_CODE_PATH/mplp_folds.py \
         $MAG_INPUT_PATH \
@@ -27,7 +25,8 @@ python3 $MAG_CODE_PATH/mplp_folds.py \
         $MAG_OUTPUT_PATH \
         --gpu \
         --finetune \
-        --seed=2 \
+        --wandb \
+        --seed=0 \
         --batch_size=10000 \
         --epochs=200 \
         --num_layers=2 \

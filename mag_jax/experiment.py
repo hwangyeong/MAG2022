@@ -576,6 +576,8 @@ class Experiment(experiment.AbstractExperiment):
           batch.graph,
       )
 
+      # model_output.node_predictions.numpy()
+
       (masked_indices,
        masked_predictions,
        masked_labels,

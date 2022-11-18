@@ -55,6 +55,10 @@
                 "--config.experiment_kwargs.config.predictions_dir", "dataset_path/jax_process/predictions/9",
                 "--config.experiment_kwargs.config.eval.split", "valid"
             ],
+            // "args":[
+            //     "--data_root", "/data/zhaohuanjing/mag/dataset_path/jax_process/data",
+            //     "--output_dir", "/data/zhaohuanjing/mag/dataset_path/jax_process/k_fold_splits"
+            // ],
             
             "env": {
                 "CUDA_VISIBLE_DEVICES": "5"

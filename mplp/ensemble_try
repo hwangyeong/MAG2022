@@ -13,8 +13,7 @@ import torch
 dataset_path = "/data/zhaohuanjing/mag/dataset_path"
 
 input_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs"
-# output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs/subm"
-output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs/try/tests"
+output_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/outputs/subm"
 # graph_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/preprocess/ppgraph_cite.bin"
 # graph_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/preprocess/paper_coauthor_paper_symmetric_jc0.5_pgl.bin"
 # y_re_path = "/data/zhaohuanjing/mag/dataset_path/mplp_data/mplp/data/y_base.npy"
@@ -55,8 +54,7 @@ method_weight = [
 
     ("rgat1024_label_m2v_feat_fhid_hid1024", 1),
     ("label_m2v_3rgat1024", 1),
-    ("rgat1024_label_m2v_feat_3rgat1024_jax_fhid", 1),
-    # ("rgat1024_label_m2v_feat_jax_fhid", 1),
+    ("rgat1024_label_m2v_feat_3rgat1024_jax_fhid", 1)
 ]
 
 # [0.74306379 0.69978153 0.13868557 0.25365812 0.29762248 0.6796287
@@ -85,9 +83,6 @@ method_weight = [
 #  -0.38835018  0.28048456  0.35506171 -0.76298339 -0.43859547  0.78012929
 #   0.52321169  0.99038397]
 # [0.8448389755811809, 0.4292764741877291, -0.07758990434454449, -0.6202926642334756, 0.5359053570007746, 0.6750408297350976, -0.4247260917094249, 0.9113951040188237, -0.9321564210819644, -0.5166313166259422, 0.41108506002713185, -0.2000819972069492, -0.4311026361036854, 0.04120428628793782, 0.8834928157101933]
-
-#最后的权重
-# rdw = [1] * 15
 rdw = [-0.4877865744749357, -0.346649996233688, -0.37787874613394634, -0.5604140184991806, 0.8799434501215753, 0.46518827818407305, -0.3769751431472341, 0.8269823445831963, -0.1954645260389538, 0.1888043427524997, 0.6469049538984475, -0.2883804174068405, -0.25362940422525115, 0.48079288659829533, 0.8627485259401018]
 dataset = MAG240MDataset(root=dataset_path)
 split_nids = dataset.get_idx_split()
@@ -103,27 +98,13 @@ y_pred_val_jax = jax_feat[len(y_true_train):len(y_true_train) + len(y_true_valid
 y_pred_test_jax = jax_feat[len(y_true_train) + len(y_true_valid):]
 
 # while True:
-    # rdw = [np.random.uniform(-1.,1.) for ii in range(16)]
-# rdw = [-0.4877865744749357, -0.346649996233688, -0.37787874613394634, -0.5604140184991806, 0.8799434501215753, 0.46518827818407305, -0.3769751431472341, 0.8269823445831963, -0.1954645260389538, 0.1888043427524997, 0.6469049538984475, -0.2883804174068405, -0.25362940422525115, 0.48079288659829533, 0.48079288659829533, 0.8627485259401018]
-# rdw = [-0.64018426, 
-#        -0.46992505, 
-#        -0.35731564, 
-#        -0.58023838,  
-#        0.88282795,  
-#        0.58422976,
-#        -0.50803445,  
-#        0.96858588, 
-#        -0.22182822,  
-#        0.18403387,  
-#        0.68290918, 
-#        -0.11743891,
-#        -0.30712759,  
-#        0.81955227,  
-#        0.216809,    
-#        1.43663889
-# ]
+    # rdw = np.random.random(14)
+    # rdw = [np.random.uniform(-1.,1.) for ii in range(15)]
+#     rdw = [ 0.47713727,  0.16409878,  0.37999395,  0.21018753,  0.30046089, -0.03566747,
+#  -0.09791892,  0.47087588,  0.30083802,  0.49181165,  0.25612034,  0.23533499,
+#   0.85427767,  0.93344795]
 
-    # rde = [np.random.uniform(-0.2,0.2) for ii in range(len(rdw))]
+    # rde = [np.random.uniform(-0.1,0.1) for ii in range(len(rdw))]
     # rdw = np.array(rdw) + rde
 
 method_weight = [(x[0],rdw[ii]) for ii,x in enumerate(method_weight)]
@@ -135,7 +116,7 @@ for ii, (method, weight) in enumerate(method_weight):
     method_path = os.path.join(input_path, method)
     y_pred_v = []
     idx_v = []
-    # print("\n %d %s..." % (ii,method))
+    print("\n %d %s..." % (ii,method))
     for fpath in glob.glob(os.path.join(method_path, 'cv-*')):
         # print("Loading predictions from %s" % fpath)
         y = torch.as_tensor(np.load(os.path.join(fpath, "y_pred_valid.npy"))).softmax(axis=1).numpy()
@@ -153,13 +134,13 @@ for ii, (method, weight) in enumerate(method_weight):
         {'y_true': y_true_v, 'y_pred': y_pred_v.argmax(axis=1)}
     )['acc']
     acc_all.append(acc)
-    # print("valid accurate: %.4f" % acc)
+    print("valid accurate: %.4f" % acc)
 
 # add jax feats
 weight_jax = rdw[-1]
 y_pred_valid_all.append(y_pred_val_jax * weight_jax)
 
-# print("\nvalid accurate distribution: %.4f +/- %.4f" % (np.mean(acc_all), np.std(acc_all)))
+print("\nvalid accurate distribution: %.4f +/- %.4f" % (np.mean(acc_all), np.std(acc_all)))
 
 nsample, ndim = y_pred_valid_all[0].shape
 # y_pred_valid_all = np.concatenate(y_pred_valid_all).reshape((-1, nsample, ndim)).mean(axis=0)
@@ -169,45 +150,36 @@ acc = evaluator.eval(
 )['acc']
 print("valid ensemble (average) accurate: %.4f" % acc)
 
-    # if acc > 0.7955:
+    # if acc > 0.793:
     #     print(rdw)
     #     break
     
 
-y_pred_test_all = []
-for ii, (method, weight) in enumerate(method_weight):
-    method_path = os.path.join(input_path, method)
-    y_pred = []
-    for fpath in glob.glob(os.path.join(method_path, 'cv-*')):
-        y = torch.as_tensor(np.load(os.path.join(fpath, "y_pred_test.npy"))).softmax(axis=1).numpy()
-        y_pred.append(y)
-    nsample, ndim = y_pred[0].shape
-    y_pred = np.concatenate(y_pred).reshape((-1, nsample, ndim)).mean(axis=0)
-    y_pred_test_all.append(y_pred * weight)
+# y_pred_test_all = []
+# for ii, (method, weight) in enumerate(method_weight):
+#     method_path = os.path.join(input_path, method)
+#     y_pred = []
+#     for fpath in glob.glob(os.path.join(method_path, 'cv-*')):
+#         y = torch.as_tensor(np.load(os.path.join(fpath, "y_pred_test.npy"))).softmax(axis=1).numpy()
+#         y_pred.append(y)
+#     nsample, ndim = y_pred[0].shape
+#     y_pred = np.concatenate(y_pred).reshape((-1, nsample, ndim)).mean(axis=0)
+#     y_pred_test_all.append(y_pred * weight)
 
-y_pred_test_all.append(y_pred_test_jax * weight_jax)
+# y_pred_test_all.append(y_pred_test_jax * weight_jax)
 
-y_pred_test = np.concatenate(y_pred_test_all).reshape((-1, nsample, ndim)).sum(axis=0)
-res = {'y_pred': y_pred_test.argmax(axis=1)}
+# y_pred_test = np.concatenate(y_pred_test_all).reshape((-1, nsample, ndim)).sum(axis=0)
+# res = {'y_pred': y_pred_test.argmax(axis=1)}
 
-# process test-challenge
-test_idx = split_nids['test-whole']
-# print(test_idx.shape)
-test_challenge_idx = split_nids['test-challenge']
-size = int(test_idx.max()) + 1
-test_challenge_mask = torch.zeros(size, dtype=torch.bool)
-test_challenge_mask[test_challenge_idx] = True
-test_challenge_mask = test_challenge_mask[test_idx]
+# # process test-challenge
+# test_idx = split_nids['test-whole']
+# # print(test_idx.shape)
+# test_challenge_idx = split_nids['test-challenge']
+# size = int(test_idx.max()) + 1
+# test_challenge_mask = torch.zeros(size, dtype=torch.bool)
+# test_challenge_mask[test_challenge_idx] = True
+# test_challenge_mask = test_challenge_mask[test_idx]
+# res['y_pred'] = res['y_pred'][test_challenge_mask]
 
-res_challenge = {}
-res_challenge['y_pred'] = res['y_pred'][test_challenge_mask]
-
-print("Saving SUBMISSION to %s" % output_path)
-evaluator.save_test_submission(res_challenge, output_path, mode="test-challenge")
-
-#process test-dev
-res_dev = {}
-test_dev_mask = ~test_challenge_mask
-res_dev['y_pred'] = res['y_pred'][test_dev_mask]
-print("Saving SUBMISSION to %s" % output_path)
-evaluator.save_test_submission(res_dev, output_path, mode="test-dev")
+# print("Saving SUBMISSION to %s" % output_path)
+# evaluator.save_test_submission(res, output_path, mode="test-challenge")

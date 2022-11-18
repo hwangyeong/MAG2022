@@ -87,8 +87,38 @@ class MLP(torch.nn.Module):
         return x
 
 
+# class MPLP(torch.nn.Module):
+#     def __init__(self, in_channels: tuple, hidden_channels: tuple, out_channels: int, num_layers: int,
+#                  dropout: float = 0.0, batch_norm: bool = True, relu_last: bool = False):
+#         super(MPLP, self).__init__()
+
+#         self.mlps = ModuleList()
+#         tot_hidden = 0
+#         for i, j in zip(in_channels, hidden_channels):
+#             tot_hidden += j
+#             # mlp = MLP(i, j, j, num_layers, dropout,
+#             #           batch_norm, relu_last)
+#             mlp = GAMLP(i, j, j, num_layers, dropout,
+#                       batch_norm)
+#             self.mlps.append(mlp)
+
+#         # self.mlp = MLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm, relu_last)
+#         self.mlp = GAMLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm)
+
+#     def reset_parameters(self):
+#         for mlp in self.mlps:
+#             mlp.reset_parameters()
+#         self.reset_parameters()
+
+#     def forward(self, xs):
+#         out = []
+#         for x, mlp in zip(xs, self.mlps):
+#             out.append(mlp(x))
+#         out = torch.cat(out, dim=-1).relu_()
+#         return self.mlp(out)
+
 class MPLP(torch.nn.Module):
-    def __init__(self, in_channels: tuple, hidden_channels: tuple, out_channels: int, num_layers: int,
+    def __init__(self, in_channels: tuple, hidden_channels: tuple, out_channels: int, mlp_hidden: int, num_layers: int,
                  dropout: float = 0.0, batch_norm: bool = True, relu_last: bool = False):
         super(MPLP, self).__init__()
 
@@ -96,14 +126,11 @@ class MPLP(torch.nn.Module):
         tot_hidden = 0
         for i, j in zip(in_channels, hidden_channels):
             tot_hidden += j
-            # mlp = MLP(i, j, j, num_layers, dropout,
-            #           batch_norm, relu_last)
-            mlp = GAMLP(i, j, j, num_layers, dropout,
-                      batch_norm)
+            mlp = MLP(i, j, j, num_layers, dropout,
+                      batch_norm, relu_last)
             self.mlps.append(mlp)
 
-        # self.mlp = MLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm, relu_last)
-        self.mlp = GAMLP(tot_hidden, 512, out_channels, num_layers, dropout, batch_norm)
+        self.mlp = MLP(tot_hidden, mlp_hidden, out_channels, num_layers, dropout, batch_norm, relu_last)
 
     def reset_parameters(self):
         for mlp in self.mlps:
@@ -155,10 +182,10 @@ def parse_args(args=None):
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--learning_rate', type=float, default=0.01)
     parser.add_argument('--batch_size', type=int, default=380000)
-    parser.add_argument('--epochs', type=int, default=1000)
+    parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--num_splits', type=int, default=5)
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--hidden', type=int, default=128)
+    parser.add_argument('--mlp_hidden', type=int, default=512)
     parser.add_argument('--finetune', action='store_true')
 
     args = parser.parse_args()
@@ -181,7 +208,7 @@ if __name__ == '__main__':
                 project="MAG240M-OGB",
                 entity="hwangyeong",
                 notes=socket.gethostname(),
-                name="mplp_pca",
+                name="mplp_jaxxx",
                 dir='results/wandb_res',
                 job_type="training",
                 reinit=True)
@@ -215,17 +242,22 @@ if __name__ == '__main__':
         ('x_pwbawp_ns_c2_lratio', 153, 32),
         ('x_pwbawp_ns_c4_lratio', 153, 32),
 
-        # ('x_pcbpcbp_ns_fmean', 768, 128),
-        # ('x_pcbpcp_ns_fmean', 768, 128),
-        # ('x_pcbp_ns_fmean', 768, 128),
-        # ('x_pcpcbp_ns_fmean', 768, 128),
-        # ('x_pcpcp_ns_fmean', 768, 128),
-        # ('x_pcp_ns_fmean', 768, 128),
-        # ('x_pwbawp_ns_fmean', 768, 128),
-        # ('x_pcbpwba_ns_fmean', 768, 128),
-        # ('x_pcpwba_ns_fmean', 768, 128),
-        # ('x_pwbaawi_ns_fmean', 768, 128),
-        # ('x_pwba_ns_fmean', 768, 128)
+        # ('x_m2v_64', 64, 128),
+        ('x_jax_153', 153, 32),
+
+        # ('x_pcbpcbp_ns_fmean', 768, 32),
+        # ('x_pcbpcp_ns_fmean', 768, 32),
+        # ('x_pcbp_ns_fmean', 768, 32),
+        # ('x_pcpcbp_ns_fmean', 768, 32),
+        # ('x_pcpcp_ns_fmean', 768, 32),
+        # ('x_pcp_ns_fmean', 768, 32),
+        # ('x_pwbawp_ns_fmean', 768, 32),
+        # ('x_pcbpwba_ns_fmean', 768, 32),
+        # ('x_pcpwba_ns_fmean', 768, 32),
+        # ('x_pwbaawi_ns_fmean', 768, 32),
+        # ('x_pwba_ns_fmean', 768, 32)
+
+        # ('3layer_x_rgat_1024', 1024, 128),
     ]
 
     logger.info("A Total of %d different type features" % len(feat_info))
@@ -296,13 +328,15 @@ if __name__ == '__main__':
     valid_idx = valid_idx0
     logger.info("KFold: %d, Train: %d, Valid: %d" % (k, len(train_idx), len(valid_idx)))
 
-    # model = MPLP(
-    #     [fi[1] for fi in feat_info], [fi[2] for fi in feat_info],
-    #     dataset.num_classes,
-    #     args.num_layers, args.dropout, not args.no_batch_norm, args.relu_last
-    # )
-    model = SAGN([fi[1] for fi in feat_info], args.hidden, dataset.num_classes, len(feat_info),
-                        args.num_layers, 1, dropout=args.dropout)
+
+    model = MPLP(
+            [fi[1] for fi in feat_info], [fi[2] for fi in feat_info],
+            dataset.num_classes, args.mlp_hidden,
+            args.num_layers, args.dropout, not args.no_batch_norm, args.relu_last
+        )
+
+    # model = SAGN([fi[1] for fi in feat_info], args.hidden, dataset.num_classes, len(feat_info),
+    #                     args.num_layers, 1, dropout=args.dropout)
 
     if k == 0:
         logger.info(model)
